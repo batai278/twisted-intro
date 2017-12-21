@@ -36,16 +36,15 @@ to serve up John Donne's Ecstasy, which I know you want to do.
     parser.add_argument('poetry_file')
 
     args = parser.parse_args()
-    print(type(args), args)
+   
     if 'poetry_file' not in vars(args).keys():
-        parser.error('Provide exactly one poetry file.')
-    options = args
+        parser.error('Provide poetry file.')
+
     poetry_file = args.poetry_file
-    print(poetry_file)
     if not os.path.exists(poetry_file):
         parser.error('No such file: %s' % poetry_file)
 
-    return options, poetry_file
+    return args, poetry_file
 
 
 def send_poetry(sock, poetry_file, num_bytes, delay):
@@ -54,17 +53,17 @@ def send_poetry(sock, poetry_file, num_bytes, delay):
     inputf = open(poetry_file)
 
     while True:
-        bytes = inputf.read(num_bytes)
+        send_bytes = inputf.read(num_bytes)
 
-        if not bytes: # no more poetry :(
+        if not send_bytes: # no more poetry :(
             sock.close()
             inputf.close()
             return
 
-        print (f'Sending {len(bytes)} bytes') 
+        print (f'Sending {len(send_bytes)} bytes') 
 
         try:
-            sock.sendall(bytes) # this is a blocking call
+            sock.sendall(send_bytes) # this is a blocking call
         except socket.error:
             sock.close()
             inputf.close()
@@ -76,7 +75,6 @@ def send_poetry(sock, poetry_file, num_bytes, delay):
 def serve(listen_socket, poetry_file, num_bytes, delay):
     while True:
         sock, addr = listen_socket.accept()
-
         print (f'Somebody at {addr} wants poetry!')
 
         send_poetry(sock, poetry_file, num_bytes, delay)
@@ -86,13 +84,13 @@ def main():
     options, poetry_file= parse_args()
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
     sock.bind((options.iface, options.port or 0))
 
     sock.listen(5)
 
     print ('Serving {} on port {}.'.format(poetry_file, sock.getsockname()[1]))
-
+    print('Trying to accept connection')
     serve(sock, poetry_file, options.num_bytes, options.delay)
 
 
