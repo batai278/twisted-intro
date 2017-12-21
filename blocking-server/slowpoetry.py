@@ -1,6 +1,6 @@
 # This is the blocking version of the Slow Poetry Server.
 
-import optparse, os, socket, time
+import argparse, os, socket, time
 
 
 def parse_args():
@@ -19,28 +19,30 @@ you could run it like this:
 to serve up John Donne's Ecstasy, which I know you want to do.
 """
 
-    parser = optparse.OptionParser(usage)
+    parser = argparse.ArgumentParser(usage)
 
     help = "The port to listen on. Default to a random available port."
-    parser.add_option('--port', type='int', help=help)
+    parser.add_argument('--port', type=int, help=help)
 
-    help = "The interface to listen on. Default is localhost."
-    parser.add_option('--iface', help=help, default='localhost')
+    help = "The interface (host) to listen on. Default is localhost."
+    parser.add_argument('--iface', help=help, default='localhost')
 
     help = "The number of seconds between sending bytes."
-    parser.add_option('--delay', type='float', help=help, default=.7)
+    parser.add_argument('--delay', type=float, help=help, default=.7)
 
     help = "The number of bytes to send at a time."
-    parser.add_option('--num-bytes', type='int', help=help, default=10)
+    parser.add_argument('--num-bytes', type=int, help=help, default=10)
 
-    options, args = parser.parse_args()
+    parser.add_argument('poetry_file')
 
-    if len(args) != 1:
+    args = parser.parse_args()
+    print(type(args), args)
+    if 'poetry_file' not in vars(args).keys():
         parser.error('Provide exactly one poetry file.')
-
-    poetry_file = args[0]
-
-    if not os.path.exists(args[0]):
+    options = args
+    poetry_file = args.poetry_file
+    print(poetry_file)
+    if not os.path.exists(poetry_file):
         parser.error('No such file: %s' % poetry_file)
 
     return options, poetry_file
@@ -59,7 +61,7 @@ def send_poetry(sock, poetry_file, num_bytes, delay):
             inputf.close()
             return
 
-        print 'Sending %d bytes' % len(bytes)
+        print (f'Sending {len(bytes)} bytes') 
 
         try:
             sock.sendall(bytes) # this is a blocking call
@@ -75,7 +77,7 @@ def serve(listen_socket, poetry_file, num_bytes, delay):
     while True:
         sock, addr = listen_socket.accept()
 
-        print 'Somebody at %s wants poetry!' % (addr,)
+        print (f'Somebody at {addr} wants poetry!')
 
         send_poetry(sock, poetry_file, num_bytes, delay)
 
@@ -89,7 +91,7 @@ def main():
 
     sock.listen(5)
 
-    print 'Serving %s on port %s.' % (poetry_file, sock.getsockname()[1])
+    print ('Serving {} on port {}.'.format(poetry_file, sock.getsockname()[1]))
 
     serve(sock, poetry_file, options.num_bytes, options.delay)
 
