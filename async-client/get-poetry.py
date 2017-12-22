@@ -1,34 +1,39 @@
 # This is the asynchronous Get Poetry Now! client.
 
-import datetime, errno, optparse, select, socket
+import datetime, errno, argparse, select, socket
 
 
-def parse_args():
+def parse_args(args=None):
     usage = """usage: %prog [options] [hostname]:port ...
 
-This is the Get Poetry Now! client, asynchronous edition.
-Run it like this:
+    This is the Get Poetry Now! client, asynchronous edition.
+    Run it like this:
 
-  python get-poetry.py port1 port2 port3 ...
+      python get-poetry.py port1 port2 port3 ...
 
-If you are in the base directory of the twisted-intro package,
-you could run it like this:
+    If you are in the base directory of the twisted-intro package,
+    you could run it like this:
 
-  python async-client/get-poetry.py 10001 10002 10003
+      python async-client/get-poetry.py 10001 10002 10003
 
-to grab poetry from servers on ports 10001, 10002, and 10003.
+    to grab poetry from servers on ports 10001, 10002, and 10003.
 
-Of course, there need to be servers listening on those ports
-for that to work.
-"""
+    Of course, there need to be servers listening on those ports
+    for that to work.
+    """
 
-    parser = optparse.OptionParser(usage)
+    parser = argparse.ArgumentParser(usage)
 
-    _, addresses = parser.parse_args()
-
-    if not addresses:
-        print parser.format_help()
-        parser.exit()
+    help = 'Adresses of servers providing poetry.'
+    parser.add_argument('adresses', metavar='N', nargs='+', help=help)
+        
+    try:
+        if args is not None:
+            args = parser.parse_args(args)
+        else:
+            args = parser.parse_args()
+    except:
+        print(parser.format_help())
 
     def parse_address(addr):
         if ':' not in addr:
@@ -42,66 +47,63 @@ for that to work.
 
         return host, int(port)
 
-    return map(parse_address, addresses)
+    if 'adresses' not in vars(args).keys():
+        print('Provide at least one adress.')
+        return
+    
+    return(list(map(parse_address, args.addresses)))
 
 
-def get_poetry(sockets):
-    """Download poety from all the given sockets."""
+def parse_args(args=None):
+    usage = """usage: %prog [options] [hostname]:port ...
 
-    poems = dict.fromkeys(sockets, '') # socket -> accumulated poem
+    This is the Get Poetry Now! client, asynchronous edition.
+    Run it like this:
 
-    # socket -> task numbers
-    sock2task = dict([(s, i + 1) for i, s in enumerate(sockets)])
+      python get-poetry.py port1 port2 port3 ...
 
-    sockets = list(sockets) # make a copy
+    If you are in the base directory of the twisted-intro package,
+    you could run it like this:
 
-    # we go around this loop until we've gotten all the poetry
-    # from all the sockets. This is the 'reactor loop'.
+      python async-client/get-poetry.py 10001 10002 10003
 
-    while sockets:
-        # this select call blocks until one or more of the
-        # sockets is ready for read I/O
-        rlist, _, _ = select.select(sockets, [], [])
+    to grab poetry from servers on ports 10001, 10002, and 10003.
 
-        # rlist is the list of sockets with data ready to read
+    Of course, there need to be servers listening on those ports
+    for that to work.
+    """
 
-        for sock in rlist:
-            data = ''
+    parser = argparse.ArgumentParser(usage)
 
-            while True:
-                try:
-                    new_data = sock.recv(1024)
-                except socket.error, e:
-                    if e.args[0] == errno.EWOULDBLOCK:
-                        # this error code means we would have
-                        # blocked if the socket was blocking.
-                        # instead we skip to the next socket
-                        break
-                    raise
-                else:
-                    if not new_data:
-                        break
-                    else:
-                        data += new_data
+    help = 'Adresses of servers providing poetry.'
+    parser.add_argument('adresses', metavar='N', nargs='+', help=help)
+        
+    try:
+        if args is not None:
+            args = parser.parse_args(args)
+        else:
+            args = parser.parse_args()
+    except:
+        print(parser.format_help())
 
-            # Each execution of this inner loop corresponds to
-            # working on one asynchronous task in Figure 3 here:
-            # http://krondo.com/?p=1209#figure3
+    def parse_address(addr):
+        if ':' not in addr:
+            host = '127.0.0.1'
+            port = addr
+        else:
+            host, port = addr.split(':')
 
-            task_num = sock2task[sock]
+        if not port.isdigit():
+            print('Ports must be integers.')
+            return
 
-            if not data:
-                sockets.remove(sock)
-                sock.close()
-                print 'Task %d finished' % task_num
-            else:
-                addr_fmt = format_address(sock.getpeername())
-                msg = 'Task %d: got %d bytes of poetry from %s'
-                print  msg % (task_num, len(data), addr_fmt)
+        return((host, int(port)))
 
-            poems[sock] += data
-
-    return poems
+    if "adresses" not in vars(args).keys():
+        print('Provide at least one adress.')
+        return
+    
+    return(map(parse_address, args.adresses))
 
 
 def connect(address):
@@ -110,12 +112,12 @@ def connect(address):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(address)
     sock.setblocking(0)
-    return sock
+    return(sock)
 
 
 def format_address(address):
     host, port = address
-    return '%s:%s' % (host or '127.0.0.1', port)
+    return(f"""{(host or '127.0.0.1')} : {port}""")
 
 
 def main():
@@ -130,9 +132,9 @@ def main():
     elapsed = datetime.datetime.now() - start
 
     for i, sock in enumerate(sockets):
-        print 'Task %d: %d bytes of poetry' % (i + 1, len(poems[sock]))
+        print(f'Task {i + 1} : {len(poems[sock])} bytes of poetry')
 
-    print 'Got %d poems in %s' % (len(addresses), elapsed)
+    print(f'Got {len(addresses)} poems in elapsed')
 
 
 if __name__ == '__main__':
