@@ -3,21 +3,21 @@
 import argparse, os, socket, time
 
 
-def parse_args():
+def parse_args(args=None):
     usage = """usage: %prog [options] poetry-file
 
-This is the Slow Poetry Server, blocking edition.
-Run it like this:
+    This is the Slow Poetry Server, blocking edition.
+    Run it like this:
 
-  python slowpoetry.py <path-to-poetry-file>
+      python slowpoetry.py <path-to-poetry-file>
 
-If you are in the base directory of the twisted-intro package,
-you could run it like this:
+    If you are in the base directory of the twisted-intro package,
+    you could run it like this:
 
-  python blocking-server/slowpoetry.py poetry/ecstasy.txt
+      python blocking-server/slowpoetry.py poetry/ecstasy.txt
 
-to serve up John Donne's Ecstasy, which I know you want to do.
-"""
+    to serve up John Donne's Ecstasy, which I know you want to do.
+    """
 
     parser = argparse.ArgumentParser(usage)
 
@@ -34,9 +34,11 @@ to serve up John Donne's Ecstasy, which I know you want to do.
     parser.add_argument('--num-bytes', type=int, help=help, default=10)
 
     parser.add_argument('poetry_file')
+    if args is not None:
+        args = parser.parse_args(args)
+    else:
+        args = parser.parse_args()
 
-    args = parser.parse_args()
-   
     if 'poetry_file' not in vars(args).keys():
         parser.error('Provide poetry file.')
 
@@ -54,17 +56,18 @@ def send_poetry(sock, poetry_file, num_bytes, delay):
 
     while True:
         send_bytes = inputf.read(num_bytes)
+        print(send_bytes)
 
         if not send_bytes: # no more poetry :(
             sock.close()
             inputf.close()
             return
 
-        print (f'Sending {len(send_bytes)} bytes') 
+        print(f'Sending {len(send_bytes)} bytes')
 
         try:
-            sock.sendall(send_bytes) # this is a blocking call
-        except socket.error:
+            sock.sendall(send_bytes.encode()) # this is a blocking call
+        except (socket.error, ConnectionAbortedError) as e:
             sock.close()
             inputf.close()
             return
@@ -80,8 +83,11 @@ def serve(listen_socket, poetry_file, num_bytes, delay):
         send_poetry(sock, poetry_file, num_bytes, delay)
 
 
-def main():
-    options, poetry_file= parse_args()
+def main(args=None):
+    if args is not None:
+        options, poetry_file = parse_args(args)
+    else:
+        options, poetry_file = parse_args()
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -95,4 +101,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    args = ['--num-bytes', '50', '--port', '10653', '--delay' ,'2.7', 'C:\\Users\\PC\\Source\\Repos\\twisted-intro\\poetry\\ecstasy.txt']
+    main(args)
