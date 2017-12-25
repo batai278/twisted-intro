@@ -13,7 +13,7 @@ log.msg('This will be logged.')
 log.err('This will be logged as an error.')
 
 def bad_callback(result):
-    xxx
+    pass
 
 try:
     bad_callback()
