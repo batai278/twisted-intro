@@ -101,5 +101,6 @@ def main(args=None):
 
 
 if __name__ == '__main__':
-    args = ['--num-bytes', '50', '--port', '10653', '--delay' ,'2.7', 'C:\\Users\\PC\\Source\\Repos\\twisted-intro\\poetry\\ecstasy.txt']
+    #args = ['--num-bytes', '50', '--port', '10653', '--delay' ,'2.7', 'C:\\Users\\PC\\Source\\Repos\\twisted-intro\\poetry\\ecstasy.txt']
+    args = None
     main(args)
