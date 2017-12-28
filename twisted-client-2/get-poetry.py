@@ -2,51 +2,10 @@
 
 # NOTE: This should not be used as the basis for production code.
 
-import datetime, optparse
+import datetime, argparse
+from arg_parsing import parse_args
 
 from twisted.internet.protocol import Protocol, ClientFactory
-
-
-def parse_args():
-    usage = """usage: %prog [options] [hostname]:port ...
-
-This is the Get Poetry Now! client, Twisted version 2.0.
-Run it like this:
-
-  python get-poetry.py port1 port2 port3 ...
-
-If you are in the base directory of the twisted-intro package,
-you could run it like this:
-
-  python twisted-client-2/get-poetry.py 10001 10002 10003
-
-to grab poetry from servers on ports 10001, 10002, and 10003.
-
-Of course, there need to be servers listening on those ports
-for that to work.
-"""
-
-    parser = optparse.OptionParser(usage)
-
-    _, addresses = parser.parse_args()
-
-    if not addresses:
-        print parser.format_help()
-        parser.exit()
-
-    def parse_address(addr):
-        if ':' not in addr:
-            host = '127.0.0.1'
-            port = addr
-        else:
-            host, port = addr.split(':', 1)
-
-        if not port.isdigit():
-            parser.error('Ports must be integers.')
-
-        return host, int(port)
-
-    return map(parse_address, addresses)
 
 
 class PoetryProtocol(Protocol):
@@ -55,9 +14,9 @@ class PoetryProtocol(Protocol):
     task_num = 0
 
     def dataReceived(self, data):
-        self.poem += data
+        self.poem += data.decode()
         msg = 'Task %d: got %d bytes of poetry from %s'
-        print  msg % (self.task_num, len(data), self.transport.getPeer())
+        print(msg % (self.task_num, len(data), self.transport.getPeer()))
 
     def connectionLost(self, reason):
         self.poemReceived(self.poem)
@@ -70,7 +29,12 @@ class PoetryClientFactory(ClientFactory):
 
     task_num = 1
 
-    protocol = PoetryProtocol # tell base class what proto to build
+    # tell base class what proto to build
+    # class variable
+    # overrides: 
+    #       protocol = None
+    # in base Factory class
+    protocol = PoetryProtocol
 
     def __init__(self, poetry_count):
         self.poetry_count = poetry_count
@@ -79,7 +43,7 @@ class PoetryClientFactory(ClientFactory):
     def buildProtocol(self, address):
         proto = ClientFactory.buildProtocol(self, address)
         proto.task_num = self.task_num
-        self.task_num += 1
+        self.task_num += 1 # if called the first time reads task_num from class variable which is set to 1 for each new Factory
         return proto
 
     def poem_finished(self, task_num=None, poem=None):
@@ -95,10 +59,10 @@ class PoetryClientFactory(ClientFactory):
 
     def report(self):
         for i in self.poems:
-            print 'Task %d: %d bytes of poetry' % (i, len(self.poems[i]))
+            print ('Task {}: {} bytes of poetry'.format(i, len(self.poems[i])))
 
     def clientConnectionFailed(self, connector, reason):
-        print 'Failed to connect to:', connector.getDestination()
+        print('Failed to connect to:', connector.getDestination())
         self.poem_finished()
 
 
@@ -119,7 +83,7 @@ def poetry_main():
 
     elapsed = datetime.datetime.now() - start
 
-    print 'Got %d poems in %s' % (len(addresses), elapsed)
+    print('Got {} poems in {}'.format(len(addresses), elapsed))
 
 
 if __name__ == '__main__':

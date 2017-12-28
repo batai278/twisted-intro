@@ -2,7 +2,7 @@
 
 # NOTE: This should not be used as the basis for production code.
 
-import datetime, optparse, os, traceback
+import datetime, argparse, os, traceback
 
 from twisted.internet.protocol import Protocol, ClientFactory
 
@@ -10,26 +10,26 @@ from twisted.internet.protocol import Protocol, ClientFactory
 def parse_args():
     usage = """usage: %prog [options] [hostname]:port ...
 
-This is the Get Poetry Now! client, Twisted version 2.0, with stacktrace.
-Run it like this:
+    This is the Get Poetry Now! client, Twisted version 2.0, with stacktrace.
+    Run it like this:
 
-  python get-poetry-stack.py port1 port2 port3 ...
+      python get-poetry-stack.py port1 port2 port3 ...
 
-If you are in the base directory of the twisted-intro package,
-you could run it like this:
+    If you are in the base directory of the twisted-intro package,
+    you could run it like this:
 
-  python twisted-client-2/get-poetry-stack.py 10001 10002 10003
+      python twisted-client-2/get-poetry-stack.py 10001 10002 10003
 
-But it's just going to print out a stacktrace as soon as it
-gets the first bits of a poem.
-"""
+    But it's just going to print out a stacktrace as soon as it
+    gets the first bits of a poem.
+    """
 
     parser = optparse.OptionParser(usage)
 
     _, addresses = parser.parse_args()
 
     if not addresses:
-        print parser.format_help()
+        print(parser.format_help())
         parser.exit()
 
     def parse_address(addr):
@@ -92,10 +92,10 @@ class PoetryClientFactory(ClientFactory):
 
     def report(self):
         for i in self.poems:
-            print 'Task %d: %d bytes of poetry' % (i, len(self.poems[i]))
+            print('Task %d: %d bytes of poetry' % (i, len(self.poems[i])))
 
     def clientConnectionFailed(self, connector, reason):
-        print 'Failed to connect to:', connector.getDestination()
+        print('Failed to connect to:', connector.getDestination())
         self.poem_finished()
 
 
@@ -116,7 +116,7 @@ def poetry_main():
 
     elapsed = datetime.datetime.now() - start
 
-    print 'Got %d poems in %s' % (len(addresses), elapsed)
+    print('Got %d poems in %s' % (len(addresses), elapsed))
 
 
 if __name__ == '__main__':
