@@ -2,11 +2,11 @@
 
 # NOTE: This should not be used as the basis for production code.
 import sys
-sys.path.append('C:\\Users\\PC\\Source\\Repos\\')
-sys.path.append('C:\\Users\\PC\\Source\\Repos\\twisted_intro')
+#sys.path.append('C:\\Users\\PC\\Source\\Repos\\')
+#sys.path.append('C:\\Users\\PC\\Source\\Repos\\twisted_intro')
 
 import datetime, argparse
-from twisted_intro.arg_parsing import parse_args
+from arg_parsing import parse_args
 
 from twisted.internet.protocol import Protocol, ClientFactory
 
