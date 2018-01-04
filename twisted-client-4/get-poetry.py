@@ -1,59 +1,31 @@
-# This is the Twisted Get Poetry Now! client, version 4.0
+# This is the Twisted Get Poetry Now! client, version 4.1
 
-import optparse, sys
+import argparse, sys
 
 from twisted.internet import defer
 from twisted.internet.protocol import Protocol, ClientFactory
 
+from arg_parsing import parse_args
 
-def parse_args():
-    usage = """usage: %prog [options] [hostname]:port ...
+class PoetryClientTimeoutError(Exception):
+    def __init__(self, address):
+        self.message = "Connection with {} expired!".format(address)
 
-This is the Get Poetry Now! client, Twisted version 4.0
-Run it like this:
-
-  python get-poetry.py port1 port2 port3 ...
-
-If you are in the base directory of the twisted-intro package,
-you could run it like this:
-
-  python twisted-client-4/get-poetry.py 10001 10002 10003
-
-to grab poetry from servers on ports 10001, 10002, and 10003.
-
-Of course, there need to be servers listening on those ports
-for that to work.
-"""
-
-    parser = optparse.OptionParser(usage)
-
-    _, addresses = parser.parse_args()
-
-    if not addresses:
-        print parser.format_help()
-        parser.exit()
-
-    def parse_address(addr):
-        if ':' not in addr:
-            host = '127.0.0.1'
-            port = addr
-        else:
-            host, port = addr.split(':', 1)
-
-        if not port.isdigit():
-            parser.error('Ports must be integers.')
-
-        return host, int(port)
-
-    return map(parse_address, addresses)
-
+    def __str__(self):
+        return(repr(self.message))
 
 class PoetryProtocol(Protocol):
 
     poem = ''
+    timeoutSet = None
+
+    def connectionMade(self):
+        if self.factory.timeout is not None:
+            from twisted.internet import reactor
+            self.timeoutSet = reactor.callLater(self.factory.timeout, self.fireTimeout, PoetryClientTimeoutError(self.transport.getPeer()))
 
     def dataReceived(self, data):
-        self.poem += data
+        self.poem += data.decode()
 
     def connectionLost(self, reason):
         self.poemReceived(self.poem)
@@ -61,26 +33,34 @@ class PoetryProtocol(Protocol):
     def poemReceived(self, poem):
         self.factory.poem_finished(poem)
 
+    def fireTimeout(self, exc_reason):
+        self.factory.fireErrback(exc_reason)
+        self.transport.loseConnection()
+
 
 class PoetryClientFactory(ClientFactory):
 
     protocol = PoetryProtocol
 
-    def __init__(self, deferred):
+    def __init__(self, deferred, timeout):
         self.deferred = deferred
+        self.timeout = timeout
 
     def poem_finished(self, poem):
         if self.deferred is not None:
             d, self.deferred = self.deferred, None
             d.callback(poem)
 
-    def clientConnectionFailed(self, connector, reason):
+    def fireErrback(self, reason):
         if self.deferred is not None:
             d, self.deferred = self.deferred, None
             d.errback(reason)
 
+    def clientConnectionFailed(self, connector, reason):
+        self.fireErrback(reason)
 
-def get_poetry(host, port):
+
+def get_poetry(host, port, timeout):
     """
     Download a poem from the given host and port. This function
     returns a Deferred which will be fired with the complete text of
@@ -88,7 +68,7 @@ def get_poetry(host, port):
     """
     d = defer.Deferred()
     from twisted.internet import reactor
-    factory = PoetryClientFactory(d)
+    factory = PoetryClientFactory(d, timeout)
     reactor.connectTCP(host, port, factory)
     return d
 
@@ -100,28 +80,31 @@ def poetry_main():
 
     poems = []
     errors = []
+    timeouts = [40, 7 , None]
 
-    def got_poem(poem):
+    def got_poem(poem, address):
         poems.append(poem)
+        print('Success on downloading poem from {}'.format(address))
 
-    def poem_failed(err):
-        print >>sys.stderr, 'Poem failed:', err
+    def poem_failed(err, host, port):
+        print(f'Error on {host}:{port}')
+        print('Poem failed:', err)
         errors.append(err)
 
     def poem_done(_):
         if len(poems) + len(errors) == len(addresses):
             reactor.stop()
 
-    for address in addresses:
+    for address, timeout in zip(addresses, timeouts):
         host, port = address
-        d = get_poetry(host, port)
-        d.addCallbacks(got_poem, poem_failed)
+        d = get_poetry(host, port, timeout)
+        d.addCallbacks(got_poem, poem_failed, callbackArgs=(address,), errbackArgs=(host, port,))
         d.addBoth(poem_done)
 
     reactor.run()
 
     for poem in poems:
-        print poem
+        print(poem)
 
 
 if __name__ == '__main__':

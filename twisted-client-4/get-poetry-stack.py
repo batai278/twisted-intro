@@ -1,51 +1,10 @@
 # This is the Twisted Get Poetry Now! client, version 4.0, with stacktrace.
 
-import optparse, os, sys, traceback
+import argparse, os, sys, traceback
 
 from twisted.internet import defer
 from twisted.internet.protocol import Protocol, ClientFactory
-
-
-def parse_args():
-    usage = """usage: %prog [options] [hostname]:port ...
-
-This is the Get Poetry Now! client, Twisted version 4.0, with stacktrace.
-Run it like this:
-
-  python get-poetry-stack.py port1 port2 port3 ...
-
-If you are in the base directory of the twisted-intro package,
-you could run it like this:
-
-  python twisted-client-4/get-poetry-stack.py 10001 10002 10003
-
-to grab poetry from servers on ports 10001, 10002, and 10003.
-
-But it's just going to print out a stacktrace as soon as it
-gets the first poem.
-"""
-
-    parser = optparse.OptionParser(usage)
-
-    _, addresses = parser.parse_args()
-
-    if not addresses:
-        print parser.format_help()
-        parser.exit()
-
-    def parse_address(addr):
-        if ':' not in addr:
-            host = '127.0.0.1'
-            port = addr
-        else:
-            host, port = addr.split(':', 1)
-
-        if not port.isdigit():
-            parser.error('Ports must be integers.')
-
-        return host, int(port)
-
-    return map(parse_address, addresses)
+from arg_parsing import parse_args
 
 
 class PoetryProtocol(Protocol):
@@ -66,8 +25,9 @@ class PoetryClientFactory(ClientFactory):
 
     protocol = PoetryProtocol
 
-    def __init__(self, deferred):
+    def __init__(self, deferred, timeout):
         self.deferred = deferred
+        self.timeout = timeout
 
     def poem_finished(self, poem):
         if self.deferred is not None:
