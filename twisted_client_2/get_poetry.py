@@ -30,6 +30,8 @@ class PoetryProtocol(Protocol):
 
     def connectionLost(self, reason):
         self.poemReceived(self.poem)
+        import traceback
+        traceback.print_stack()
 
     def poemReceived(self, poem):
         self.factory.poem_finished(self.task_num, poem)
