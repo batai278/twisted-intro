@@ -84,7 +84,7 @@ def poetry_main():
     poems = []
     errors = []
     timeouts = [40, 7, None]
-    
+
     def got_poem(poem, address):
         poems.append(poem)
         print('Success on downloading poem from {}'.format(address))
