@@ -1,4 +1,5 @@
 import argparse
+import os
 
 def parse_args(args=None):
     usage = """usage: %prog [options] [hostname]:port ...
@@ -49,3 +50,42 @@ def parse_args(args=None):
         return
 
     return(list(map(parse_address, args.addresses)))
+
+def parse_twisted_server_args():
+    usage = """usage: %prog [options] poetry-file
+
+    This is the Fast Poetry Server, Twisted edition.
+    Run it like this:
+
+      python fastpoetry.py <path-to-poetry-file>
+
+    If you are in the base directory of the twisted-intro package,
+    you could run it like this:
+
+      python twisted-server-1/fastpoetry.py poetry/ecstasy.txt
+
+    to serve up John Donne's Ecstasy, which I know you want to do.
+    """
+
+    parser = argparse.ArgumentParser(usage)
+
+    help = "The port to listen on. Default to a random available port."
+    parser.add_argument('--port', type=int, help=help)
+
+    help = "The interface to listen on. Default is localhost."
+    parser.add_argument('--iface', help=help, default='localhost')
+
+    help = "Poetry file to serve."
+    parser.add_argument('poetry', help=help)
+
+    args = parser.parse_args()
+
+    if 'poetry' not in vars(args).keys():
+        parser.error('Provide exactly one poetry file.')
+
+    poetry_file = args.poetry
+
+    if not os.path.exists(args.poetry):
+        parser.error('No such file: %s' % poetry_file)
+
+    return args, args.poetry
