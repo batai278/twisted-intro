@@ -1,51 +1,12 @@
 # This is the Twisted Get Poetry Now! client, version 5.1
 
-import optparse, random, sys
+import argparse, random
 
 from twisted.internet import defer
 from twisted.internet.protocol import Protocol, ClientFactory
+from twisted.python.failure import Failure
 
-
-def parse_args():
-    usage = """usage: %prog [options] [hostname]:port ...
-
-This is the Get Poetry Now! client, Twisted version 5.1
-Run it like this:
-
-  python get-poetry-1.py port1 port2 port3 ...
-
-If you are in the base directory of the twisted-intro package,
-you could run it like this:
-
-  python twisted-client-5/get-poetry-1.py 10001 10002 10003
-
-to grab poetry from servers on ports 10001, 10002, and 10003.
-
-Of course, there need to be servers listening on those ports
-for that to work.
-"""
-
-    parser = optparse.OptionParser(usage)
-
-    _, addresses = parser.parse_args()
-
-    if not addresses:
-        print parser.format_help()
-        parser.exit()
-
-    def parse_address(addr):
-        if ':' not in addr:
-            host = '127.0.0.1'
-            port = addr
-        else:
-            host, port = addr.split(':', 1)
-
-        if not port.isdigit():
-            parser.error('Ports must be integers.')
-
-        return host, int(port)
-
-    return map(parse_address, addresses)
+from twisted_intro.arg_parsing import parse_args
 
 
 class PoetryProtocol(Protocol):
@@ -53,7 +14,7 @@ class PoetryProtocol(Protocol):
     poem = ''
 
     def dataReceived(self, data):
-        self.poem += data
+        self.poem += data.decode()
 
     def connectionLost(self, reason):
         self.poemReceived(self.poem)
@@ -69,15 +30,19 @@ class PoetryClientFactory(ClientFactory):
     def __init__(self, deferred):
         self.deferred = deferred
 
-    def poem_finished(self, poem):
+    def fireDeffered(self, res):
         if self.deferred is not None:
             d, self.deferred = self.deferred, None
-            d.callback(poem)
+        if isinstance(res, BaseException):
+            d.errback(res)
+        else:
+            d.callback(res)
+
+    def poem_finished(self, poem):
+        self.fireDeffered(poem)
 
     def clientConnectionFailed(self, connector, reason):
-        if self.deferred is not None:
-            d, self.deferred = self.deferred, None
-            d.errback(reason)
+        self.fireDeffered(reason)
 
 
 def get_poetry(host, port):
@@ -129,16 +94,17 @@ def poetry_main():
 
     def cummingsify_failed(err):
         if err.check(CannotCummingsify):
-            print 'Cummingsify failed!'
+            print('Cummingsify failed!')
             return err.value.args[0]
         return err
 
     def got_poem(poem):
-        print poem
+        print(poem)
         poems.append(poem)
 
     def poem_failed(err):
-        print >>sys.stderr, 'The poem download failed.'
+        print('The poem download failed.')
+        print(err)
         errors.append(err)
 
     def poem_done(_):

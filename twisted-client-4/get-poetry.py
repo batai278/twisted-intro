@@ -5,7 +5,7 @@ import argparse, sys
 from twisted.internet import defer
 from twisted.internet.protocol import Protocol, ClientFactory
 
-from arg_parsing import parse_args
+from twisted_intro.arg_parsing import parse_args
 
 class PoetryClientTimeoutError(Exception):
     def __init__(self, address):
