@@ -1,53 +1,9 @@
 # This is the blocking version of the Slow Poetry Server.
 
-import argparse, os, socket, time
+import os, socket, time
 
 
-def parse_args(args=None):
-    usage = """usage: %prog [options] poetry-file
-
-    This is the Slow Poetry Server, blocking edition.
-    Run it like this:
-
-      python slowpoetry.py <path-to-poetry-file>
-
-    If you are in the base directory of the twisted-intro package,
-    you could run it like this:
-
-      python blocking-server/slowpoetry.py poetry/ecstasy.txt
-
-    to serve up John Donne's Ecstasy, which I know you want to do.
-    """
-
-    parser = argparse.ArgumentParser(usage)
-
-    help = "The port to listen on. Default to a random available port."
-    parser.add_argument('--port', type=int, help=help)
-
-    help = "The interface (host) to listen on. Default is localhost."
-    parser.add_argument('--iface', help=help, default='localhost')
-
-    help = "The number of seconds between sending bytes."
-    parser.add_argument('--delay', type=float, help=help, default=.7)
-
-    help = "The number of bytes to send at a time."
-    parser.add_argument('--num-bytes', type=int, help=help, default=10)
-
-    parser.add_argument('poetry_file')
-    if args is not None:
-        args = parser.parse_args(args)
-    else:
-        args = parser.parse_args()
-
-    if 'poetry_file' not in vars(args).keys():
-        parser.error('Provide poetry file.')
-
-    poetry_file = args.poetry_file
-    if not os.path.exists(poetry_file):
-        parser.error('No such file: %s' % poetry_file)
-
-    return args, poetry_file
-
+from twisted_intro.arg_parsing import parse_blocking_server_args
 
 def send_poetry(sock, poetry_file, num_bytes, delay):
     """Send some poetry slowly down the socket."""
@@ -85,7 +41,7 @@ def serve(listen_socket, poetry_file, num_bytes, delay):
 
 def main(args=None):
     if args is not None:
-        options, poetry_file = parse_args(args)
+        options, poetry_file = parse_blocking_server_args(args)
     else:
         options, poetry_file = parse_args()
 
@@ -101,6 +57,4 @@ def main(args=None):
 
 
 if __name__ == '__main__':
-    #args = ['--num-bytes', '50', '--port', '10653', '--delay' ,'2.7', 'C:\\Users\\PC\\Source\\Repos\\twisted-intro\\poetry\\ecstasy.txt']
-    args = None
-    main(args)
+    main()

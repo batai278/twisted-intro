@@ -118,7 +118,7 @@ def parse_blocking_server_args(args=None):
     parser.add_argument('--delay', type=float, help=help, default=.7)
 
     help = "The number of bytes to send at a time."
-    parser.add_argument('--num-bytes', type=int, help=help, default=10)
+    parser.add_argument('--num_bytes', type=int, help=help, default=10)
 
     parser.add_argument('poetry_file')
     if args is not None:

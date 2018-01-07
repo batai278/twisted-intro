@@ -12,7 +12,7 @@ class PoetryProtocol(Protocol):
     poem = ''
 
     def dataReceived(self, data):
-        self.poem += data
+        self.poem += data.decode()
 
     def connectionLost(self, reason):
         self.poemReceived(self.poem)

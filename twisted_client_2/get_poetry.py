@@ -6,7 +6,7 @@ import sys
 #sys.path.append('C:\\Users\\PC\\Source\\Repos\\twisted_intro')
 
 import datetime, argparse
-from arg_parsing import parse_args
+from twisted_intro.arg_parsing import parse_args
 
 from twisted.internet.protocol import Protocol, ClientFactory
 
