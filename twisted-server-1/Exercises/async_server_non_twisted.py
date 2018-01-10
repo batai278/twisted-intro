@@ -8,7 +8,7 @@ from arg_parsing import parse_args, parse_blocking_server_args
 
 READ_SOCK = []  # Server socket listening on 'host:port' for incoming clients connection
 WRITE_SOCKS = []  # Client sockets returned by sock.accept() on READ_SOCK currently connected for obtaining poetry
-POETRY_DESCRIPTORS = { }  # Open descriptors for each 'client' socket: pairs sock:descr
+POETRY_DESCRIPTORS = {}  # Open descriptors for each 'client' socket: pairs sock:descr
 
 
 def serve(listen_socket, poetry, delay = 0.7, num_bytes = 10):
@@ -36,14 +36,14 @@ def serve(listen_socket, poetry, delay = 0.7, num_bytes = 10):
 		# For each client ready to accept new chunks of poetry send latter
 		for client_ready_sock in send_ready:
 			try:
-				send_to_client(client_ready_sock)
+				send_to_client(client_ready_sock, delay, num_bytes)
 			except Exception as err:
 				print(err)
 			# raise
 
 
-def send_to_client(sock):
-	send_bytes = POETRY_DESCRIPTORS[sock].read(NUM_BYTES)
+def send_to_client(sock, delay, num_bytes):
+	send_bytes = POETRY_DESCRIPTORS[sock].read(num_bytes)
 
 	if not send_bytes:  # no more poetry :(
 		finish_sending(sock)
@@ -63,7 +63,7 @@ def send_to_client(sock):
 		finish_sending(sock)
 		return
 
-	time.sleep(DELAY)
+	time.sleep(delay)
 
 
 def finish_sending(sock):
@@ -78,19 +78,17 @@ def finish_sending(sock):
 
 def main():
 	options, poetry_filename = parse_blocking_server_args()
-	NUM_BYTES = options.num_bytes or 10
-	DELAY = options.delay or 0.7
-
-	SERVER_ADDRESS = (options.iface, options.port or 0)
+	num_bytes = options.num_bytes or 10
+	delay = options.delay or 0.7
 
 	server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	server_sock.bind(SERVER_ADDRESS)
+	server_sock.bind((options.iface, options.port or 0))
 	server_sock.listen(5)
 	READ_SOCK.append(server_sock)  # Add to list for passing as select 1-st argument
 
 	print(f"""Serving {poetry_filename} on {':'.join([options.iface, str(options.port)])}""")
 
-	serve(server_sock, poetry_filename, delay=DELAY, num_bytes=NUM_BYTES)
+	serve(server_sock, poetry_filename, delay=delay, num_bytes=num_bytes)
 
 
 if __name__ == '__main__':

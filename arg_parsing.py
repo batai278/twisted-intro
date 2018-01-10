@@ -1,6 +1,7 @@
 import argparse
 import os
 
+
 def parse_args(args=None):
     usage = """usage: %prog [options] [hostname]:port ...
 
@@ -51,6 +52,7 @@ def parse_args(args=None):
 
     return(list(map(parse_address, args.addresses)))
 
+
 def parse_twisted_server_args():
     usage = """usage: %prog [options] poetry-file
 
@@ -89,6 +91,7 @@ def parse_twisted_server_args():
         parser.error('No such file: %s' % poetry_file)
 
     return args, args.poetry
+
 
 def parse_blocking_server_args(args=None):
     usage = """usage: %prog [options] poetry-file
@@ -134,3 +137,35 @@ def parse_blocking_server_args(args=None):
         parser.error('No such file: %s' % poetry_file)
 
     return args, poetry_file
+
+
+def parse_transformation_server_args():
+    usage = """usage: %prog [options]
+
+    This is the Poetry Transform Server.
+    Run it like this:
+    
+    python transformedpoetry.py
+
+    If you are in the base directory of the twisted-intro package,
+    you could run it like this:
+    
+    python twisted-server-1/transformedpoetry.py --port 11000
+    
+    to provide poetry transformation on port 11000.
+    """
+
+    parser = argparse.ArgumentParser(usage)
+
+    _help = "The port to listen on. Default to a random available port."
+    parser.add_argument('--port', type=int, help=_help)
+
+    _help = "The interface to listen on. Default is localhost."
+    parser.add_argument('--iface', help=_help, default='localhost')
+
+    options = parser.parse_args()
+
+    if 'port' not in vars(options).keys():
+        raise ValueError("Specify port")
+
+    return options

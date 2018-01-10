@@ -8,13 +8,16 @@ chain can return deferreds themselves.
 
 # three simple callbacks
 
+
 def callback_1(res):
     print('callback_1 got', res)
     return(1)
 
+
 def callback_2(res):
     print('callback_2 got', res)
     return(2)
+
 
 def callback_3(res):
     print('callback_3 got', res)
@@ -54,6 +57,7 @@ deferred_2 = None # NOTE: because we aren't using a reactor, we have
                   #       action set in motion by the callback that
                   #       created and returned the deferred, as is
                   #       normally the case.
+
 
 def callback_2_async(res):
     print('callback_2 got', res)

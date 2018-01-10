@@ -1,6 +1,6 @@
 # This is the Twisted Get Poetry Now! client, version 6.0
 
-import optparse, sys
+import optparse
 
 from twisted.internet import defer
 from twisted.internet.protocol import Protocol, ClientFactory
@@ -32,7 +32,7 @@ ports for that to work.
     _, addresses = parser.parse_args()
 
     if len(addresses) < 2:
-        print parser.format_help()
+        print(parser.format_help())
         parser.exit()
 
     def parse_address(addr):
@@ -164,17 +164,17 @@ def poetry_main():
         d = proxy.xform('cummingsify', poem)
 
         def fail(err):
-            print >>sys.stderr, 'Cummingsify failed!'
+            print('Cummingsify failed!')
             return poem
 
         return d.addErrback(fail)
 
     def got_poem(poem):
-        print poem
+        print(poem)
         poems.append(poem)
 
     def poem_failed(err):
-        print >>sys.stderr, 'The poem download failed.'
+        print('The poem download failed.')
         errors.append(err)
 
     def poem_done(_):
